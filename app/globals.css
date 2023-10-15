@@ -2,26 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --color-bright-blue: 220 98% 61%;
+    --color-very-light-gray: 0 0% 98%;
+    --color-very-light-grayish-blue: 236 33% 92%;
+    --color-light-Gbrayish-blue: 233 11% 84%;
+    --color-dark-grayish-blue: 236 9% 61%;
+    --color-very-dark-grayish-Blue: 235 19% 35%;
   }
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  .dark {
+    --color-very-dark-blue: 235 21% 11%;
+    --color-very-dark-desaturated-blue: 235 24% 19%;
+    --color-light-grayish-blue: 234 39% 85%;
+    --color-light-grayish-blue-hover: 236 33% 92%;
+    --color-dark-grayish-blue: 234 11% 52%;
+    --color-very-dark-grayish-blue: 233 14% 35%;
+  }
 }
