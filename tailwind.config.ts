@@ -10,8 +10,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        checkBackground:
-          "linear-gradient hsl(192, 100%, 67%) to hsl(280, 87%, 65%)",
         brightBlue: "hsl(var(--color-bright-blue) / <alpha-value>)",
         veryLightGray: "hsl(var(--color-very-light-gray) / <alpha-value>)",
         veryLightGrayishBlue:

@@ -7,12 +7,7 @@ type Props = {
 export const IconCheck: React.FC<Props> = ({ className }) => {
   return (
     <svg className={className} width="11" height="9">
-      <path
-        fill="none"
-        stroke="#FFF"
-        stroke-width="2"
-        d="M1 4.304L3.696 7l6-6"
-      />
+      <path fill="none" strokeWidth="2" d="M1 4.304L3.696 7l6-6" />
     </svg>
   );
 };

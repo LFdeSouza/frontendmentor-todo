@@ -31,4 +31,3 @@ export default function RootLayout({
     </html>
   );
 }
-// bg-[url(/bg-mobile-light.jpg)]dark:bg-[url(/bg-mobile-dark.jpg)] sm:bg-[url(/bg-desktop-light.jpg)] dark:sm:bg-[url(/bg-desktop-dark.jpg)]

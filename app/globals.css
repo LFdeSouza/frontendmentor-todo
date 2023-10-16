@@ -20,3 +20,12 @@
     --color-very-dark-grayish-blue: 233 14% 35%;
   }
 }
+
+@layer components {
+  .checkbox:checked ~ span.custom-checkbox {
+    @apply border-white bg-gradient-to-b from-[#57ddff] to-[#c058f3] dark:border-veryDarkDesaturatedBlue;
+  }
+  .checkbox:checked ~ span.custom-checkbox > svg {
+    @apply stroke-white;
+  }
+}

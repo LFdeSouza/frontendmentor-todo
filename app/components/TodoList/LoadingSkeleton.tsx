@@ -6,9 +6,9 @@ const TodoLoadingSkeleton = () => {
         .map((i, idx) => (
           <div
             key={idx}
-            className="relative  border-b border-b-lightGrayishBlue p-2 text-xs dark:border-b-veryDarkGrayishBlue"
+            className="relative  border-b border-b-lightGrayishBlue p-2 text-xs last-of-type:border-none dark:border-b-veryDarkGrayishBlue"
           >
-            <div className=" animate-pulse rounded bg-slate-200 p-3 py-4 dark:bg-slate-700"></div>
+            <div className=" animate-pulse rounded bg-slate-200 p-3 py-4 dark:bg-slate-700 sm:py-6"></div>
           </div>
         ))}
     </section>

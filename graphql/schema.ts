@@ -18,7 +18,6 @@ export const resolvers = {
   Query: {
     todos: (_: any, __: any, context: Context) => {
       try {
-        throw new Error("Something went wrong");
         return context.prisma.todo.findMany();
       } catch (error) {
         let message;
