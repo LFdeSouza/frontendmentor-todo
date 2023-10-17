@@ -1,14 +1,38 @@
 import React from "react";
 import { Todo } from "@/app/types/types";
 import { IconCheck, IconCross } from "../shared/Icons";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Props = {
   todo: Todo;
+  id: number;
 };
 
-const TodoItem: React.FC<Props> = ({ todo }) => {
+const Task: React.FC<Props> = ({ todo, id }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <div className=" group relative flex items-center justify-between border-b p-4 text-veryDarkGrayishBlue transition-transform dark:border-b-veryDarkGrayishBlue dark:text-lightGrayishBlue sm:p-5 sm:text-lg">
+    <div
+      style={style}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`group relative flex cursor-grab items-center justify-between border-b p-4 text-veryDarkGrayishBlue transition-transform  dark:border-b-veryDarkGrayishBlue dark:text-lightGrayishBlue sm:p-5 sm:text-lg ${
+        isDragging && "opacity-30"
+      }`}
+    >
       <div className="group flex items-center gap-4">
         <input
           id={`${todo.id}`}
@@ -29,4 +53,4 @@ const TodoItem: React.FC<Props> = ({ todo }) => {
   );
 };
 
-export default TodoItem;
+export default Task;
