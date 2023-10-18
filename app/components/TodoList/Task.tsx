@@ -7,9 +7,10 @@ import { CSS } from "@dnd-kit/utilities";
 type Props = {
   todo: Todo;
   id: number;
+  toggleCompleted: (id: number, currState: boolean) => void;
 };
 
-const Task: React.FC<Props> = ({ todo, id }) => {
+const Task: React.FC<Props> = ({ todo, id, toggleCompleted }) => {
   const {
     attributes,
     listeners,
@@ -35,14 +36,23 @@ const Task: React.FC<Props> = ({ todo, id }) => {
     >
       <div className="group flex items-center gap-4">
         <input
+          onChange={() => toggleCompleted(todo.id, todo.completed)}
           id={`${todo.id}`}
+          checked={todo.completed}
           type="checkbox"
           className="checkbox cursor-poiner absolute left-4 h-7 w-7 cursor-pointer opacity-0"
         />
         <span className="custom-checkbox border-darktGrayishBlue left-4 top-3 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border group-hover:border-veryDarkGrayishBlue dark:border-veryDarkGrayishBlue dark:hover:border-darkGrayishBlue dark:group-hover:border-darkGrayishBlue sm:top-4 sm:h-7 sm:w-7">
           <IconCheck className=" stroke-white dark:stroke-veryDarkDesaturatedBlue" />
         </span>
-        <label htmlFor={`${todo.id}`} className="h-3 cursor-pointer sm:h-6">
+        <label
+          htmlFor={`${todo.id}`}
+          className={`h-3 cursor-pointer sm:h-6 ${
+            todo.completed
+              ? "text-lightGrayishBlue line-through dark:text-darkGrayishBlue"
+              : ""
+          }`}
+        >
           {todo.title}
         </label>
       </div>

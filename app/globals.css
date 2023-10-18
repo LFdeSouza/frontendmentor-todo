@@ -28,4 +28,22 @@
   .checkbox:checked ~ span.custom-checkbox > svg {
     @apply stroke-white;
   }
+
+
+  .scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar::-webkit-scrollbar-track {
+    @apply bg-veryLightGray dark:bg-veryDarkBlue
+  }
+ 
+
+  .scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-darkGrayishBlue
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+  }
 }

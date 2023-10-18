@@ -12,7 +12,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-const client = new ApolloClient({
+export const client = new ApolloClient({
   uri: "/api/graphql",
   cache: new InMemoryCache(),
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, gql, useMutation } from "@apollo/client";
 import type { Todo } from "@/app/types/types";
 import {
   DndContext,
@@ -11,33 +11,34 @@ import {
   useSensor,
   PointerSensor,
   KeyboardSensor,
-  UniqueIdentifier,
   DragOverlay,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
 } from "@dnd-kit/sortable";
+
 //components
 import TodoLoadingSkeleton from "./LoadingSkeleton";
 import Task from "./Task";
 import Filter from "./Filter";
 
+export const GET_TODOS = gql`
+  query Todos {
+    todos {
+      id
+      completed
+      title
+      position
+    }
+  }
+`;
 type Props = {
   todos: Todo[];
 };
 
 const TodoListQuery = () => {
-  const { data, loading, error } = useQuery(gql`
-    query {
-      todos {
-        id
-        completed
-        title
-      }
-    }
-  `);
+  const { data, loading, error } = useQuery(GET_TODOS);
 
   if (loading) {
     return <TodoLoadingSkeleton />;
@@ -55,14 +56,48 @@ const TodoListQuery = () => {
 };
 
 const TodoList: React.FC<Props> = ({ todos }) => {
+  const [toggleCompleted] = useMutation(gql`
+    mutation Mutation($id: ID) {
+      toggleComplete(id: $id) {
+        id
+        completed
+      }
+    }
+  `);
+
+  const toggleTaskCompleted = async (id: number, currState: boolean) => {
+    try {
+      await toggleCompleted({
+        variables: { id },
+        optimisticResponse: {
+          toggleComplete: {
+            __typename: "Todo",
+            completed: !currState,
+            id,
+          },
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      let message;
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      throw new Error(message);
+    }
+  };
+
   const [filter, setFilter] = useState("ALL");
-  const filteredItems = useMemo(() => {
-    return filter === "ACTIVE"
-      ? todos.filter((i) => !i.completed)
+  const filteredItems =
+    filter === "ACTIVE"
+      ? [...todos]
+          .filter((i) => !i.completed)
+          .sort((a, b) => a.position - b.position)
       : filter === "COMPLETED"
-      ? todos.filter((i) => i.completed)
-      : todos;
-  }, [todos, filter]);
+      ? [...todos]
+          .filter((i) => i.completed)
+          .sort((a, b) => a.position - b.position)
+      : [...todos].sort((a, b) => a.position - b.position);
 
   const itemsLeft = todos.reduce(
     (total, i) => (i.completed ? total : ++total),
@@ -100,14 +135,21 @@ const TodoList: React.FC<Props> = ({ todos }) => {
       sensors={sensors}
     >
       <div className="mt-4 overflow-hidden rounded-md bg-white text-xs text-veryLightGray shadow-lg dark:bg-veryDarkDesaturatedBlue sm:mt-7">
-        <SortableContext
-          items={filteredItems}
-          strategy={verticalListSortingStrategy}
-        >
-          {filteredItems.map((item: Todo) => (
-            <Task key={item.id} todo={item} id={item.id} />
-          ))}
-        </SortableContext>
+        <div className="scrollbar max-h-96 overflow-auto sm:max-h-[50vh]">
+          <SortableContext
+            items={filteredItems}
+            strategy={verticalListSortingStrategy}
+          >
+            {filteredItems.map((item: Todo) => (
+              <Task
+                key={item.id}
+                todo={item}
+                id={item.id}
+                toggleCompleted={toggleTaskCompleted}
+              />
+            ))}
+          </SortableContext>
+        </div>
         <div className="flex justify-between p-4 pl-8 text-darkGrayishBlue last-of-type:border-none dark:text-darkGrayishBlue sm:text-sm">
           <p>{itemsLeft} items left</p>
           <div className=" hidden justify-around gap-4 rounded-md bg-white text-base font-bold text-lightGrayishBlue dark:bg-veryDarkDesaturatedBlue dark:text-darkGrayishBlue sm:flex">
