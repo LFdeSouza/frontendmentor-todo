@@ -250,13 +250,14 @@ const TodoList: React.FC<Props> = ({ todos }) => {
           const cachedTodos = cache.readQuery({ query: GET_TODOS }) as {
             todos: Todo[];
           };
-          cachedTodos.todos.splice(activeIdx, 1);
-          cachedTodos.todos.splice(overIdx, 0, data.moveTask);
+          const localTodos = [...cachedTodos.todos];
+          localTodos.splice(activeIdx, 1);
+          localTodos.splice(overIdx, 0, data.moveTask);
 
           cache.writeQuery({
             query: GET_TODOS,
             data: {
-              todos: [...cachedTodos.todos],
+              todos: [...localTodos],
             },
           });
         },

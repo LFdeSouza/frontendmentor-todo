@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { Context } from "./context";
 
 export const typeDefs = `#graphql
@@ -64,7 +65,7 @@ export const resolvers = {
     ) => {
       try {
         const res = await context.prisma.todo.update({
-          data: { position },
+          data: { position: new Prisma.Decimal(position) },
           where: { id: Number(id) },
         });
         return res;
