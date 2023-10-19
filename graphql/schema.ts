@@ -16,7 +16,11 @@ export const typeDefs = `#graphql
 
   type Mutation {
     createTask(title:String):Todo
+    moveTask(id:ID, position:Float):Todo
     toggleComplete(id:ID):Todo
+    deleteTask(id:ID):Todo
+    deleteCompleted:Boolean
+    test:String
   }
 `;
 
@@ -24,7 +28,7 @@ export const resolvers = {
   Query: {
     todos: (_: any, __: any, context: Context) => {
       try {
-        return context.prisma.todo.findMany();
+        return context.prisma.todo.findMany({ orderBy: { position: "asc" } });
       } catch (error) {
         let message;
         if (error instanceof Error) message = error.message;
@@ -39,12 +43,31 @@ export const resolvers = {
       context: Context,
     ) => {
       try {
-        const count = await context.prisma.todo.count();
-        const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-        await delay(1000);
+        const length = (await context.prisma.todo.count()) ?? 0;
         return await context.prisma.todo.create({
-          data: { title, completed: false, position: count + 1 },
+          data: {
+            title,
+            completed: false,
+            position: length + 1,
+          },
         });
+      } catch (error) {
+        let message;
+        if (error instanceof Error) message = error.message;
+        throw new Error(message);
+      }
+    },
+    moveTask: async (
+      _: any,
+      { id, position }: { id: number; position: number },
+      context: Context,
+    ) => {
+      try {
+        const res = await context.prisma.todo.update({
+          data: { position },
+          where: { id: Number(id) },
+        });
+        return res;
       } catch (error) {
         let message;
         if (error instanceof Error) message = error.message;
@@ -69,6 +92,35 @@ export const resolvers = {
         if (error instanceof Error) message = error.message;
         throw new Error(message);
       }
+    },
+    deleteTask: async (_: any, { id }: { id: number }, context: Context) => {
+      try {
+        const item = await context.prisma.todo.delete({
+          where: { id: Number(id) },
+        });
+        return item;
+      } catch (error) {
+        console.error(error);
+        let message;
+        if (error instanceof Error) message = error.message;
+        throw new Error(message);
+      }
+    },
+    deleteCompleted: async (_: any, __: any, context: Context) => {
+      try {
+        await context.prisma.todo.deleteMany({ where: { completed: true } });
+        return true;
+      } catch (error) {
+        console.error(error);
+        let message;
+        if (error instanceof Error) message = error.message;
+        throw new Error(message);
+      }
+    },
+    test: () => {
+      const s = "hhhh";
+
+      return s;
     },
   },
 };

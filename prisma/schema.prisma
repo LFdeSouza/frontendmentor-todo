@@ -18,5 +18,5 @@ model Todo {
   updatedAt DateTime @updatedAt
   title     String
   completed Boolean
-  position  Decimal  @db.Decimal(12, 2)
+  position  Decimal  @db.Decimal(12, 5)
 }

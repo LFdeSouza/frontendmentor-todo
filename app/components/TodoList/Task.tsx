@@ -8,9 +8,10 @@ type Props = {
   todo: Todo;
   id: number;
   toggleCompleted: (id: number, currState: boolean) => void;
+  removeTask: (id: number) => void;
 };
 
-const Task: React.FC<Props> = ({ todo, id, toggleCompleted }) => {
+const Task: React.FC<Props> = ({ todo, id, toggleCompleted, removeTask }) => {
   const {
     attributes,
     listeners,
@@ -56,7 +57,7 @@ const Task: React.FC<Props> = ({ todo, id, toggleCompleted }) => {
           {todo.title}
         </label>
       </div>
-      <button onClick={() => console.log(todo.id)}>
+      <button onClick={() => removeTask(todo.id)}>
         <IconCross className="scale-75 transition-transform sm:scale-0 sm:group-hover:scale-100" />
       </button>
     </div>

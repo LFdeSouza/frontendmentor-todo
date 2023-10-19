@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useMutation, gql } from "@apollo/client";
 import { GET_TODOS } from "./TodoList/TodoList";
-import { client } from "../hooks/Providers";
+import { Todo } from "../types/types";
 
 const CreateTodo = () => {
   const [createTask] = useMutation(
@@ -26,7 +26,7 @@ const CreateTodo = () => {
   const addTask = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const res = await createTask({
+      await createTask({
         variables: { title },
         optimisticResponse: {
           createTask: {
@@ -38,7 +38,9 @@ const CreateTodo = () => {
           },
         },
         update: (cache, { data }) => {
-          const cached = cache.readQuery({ query: GET_TODOS });
+          const cached = cache.readQuery({ query: GET_TODOS }) as {
+            todos: Todo[];
+          };
           cache.writeQuery({
             query: GET_TODOS,
             data: { todos: [...cached.todos, data.createTask] },

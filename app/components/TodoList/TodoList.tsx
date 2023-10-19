@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { cache, useMemo, useState } from "react";
 import { useQuery, gql, useMutation } from "@apollo/client";
 import type { Todo } from "@/app/types/types";
 import {
@@ -12,6 +12,7 @@ import {
   PointerSensor,
   KeyboardSensor,
   DragOverlay,
+  TouchSensor,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -23,6 +24,7 @@ import TodoLoadingSkeleton from "./LoadingSkeleton";
 import Task from "./Task";
 import Filter from "./Filter";
 
+//Queries and mutations
 export const GET_TODOS = gql`
   query Todos {
     todos {
@@ -36,6 +38,41 @@ export const GET_TODOS = gql`
 type Props = {
   todos: Todo[];
 };
+
+const TOGGLE_COMPLETED = gql`
+  mutation ToggleCompleted($id: ID) {
+    toggleComplete(id: $id) {
+      id
+      completed
+    }
+  }
+`;
+
+const DELETE_TASK = gql`
+  mutation DeleteTask($id: ID) {
+    deleteTask(id: $id) {
+      id
+    }
+  }
+`;
+
+const DELETE_COMPLETED = gql`
+  mutation DeleteCompleted {
+    deleteCompleted
+  }
+`;
+
+const MOVE_TASK = gql`
+  mutation MoveTask($id: ID, $position: Float) {
+    moveTask(id: $id, position: $position) {
+      id
+      position
+      title
+      position
+      completed
+    }
+  }
+`;
 
 const TodoListQuery = () => {
   const { data, loading, error } = useQuery(GET_TODOS);
@@ -56,15 +93,35 @@ const TodoListQuery = () => {
 };
 
 const TodoList: React.FC<Props> = ({ todos }) => {
-  const [toggleCompleted] = useMutation(gql`
-    mutation Mutation($id: ID) {
-      toggleComplete(id: $id) {
-        id
-        completed
-      }
-    }
-  `);
+  const [toggleCompleted] = useMutation(TOGGLE_COMPLETED);
+  const [deleteTask] = useMutation(DELETE_TASK);
+  const [deleteCompleted] = useMutation(DELETE_COMPLETED);
+  const [moveTask] = useMutation(MOVE_TASK);
 
+  //Sensors from react DnD kit
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
+    useSensor(TouchSensor, { activationConstraint: { distance: 10 } }),
+  );
+
+  const [filter, setFilter] = useState("ALL");
+  const [activeId, setActiveId] = useState<null | Todo>(null);
+
+  const filteredItems =
+    filter === "ACTIVE"
+      ? [...todos].filter((i) => !i.completed)
+      : filter === "COMPLETED"
+      ? [...todos].filter((i) => i.completed)
+      : [...todos];
+
+  const itemsLeft = todos.reduce(
+    (total, i) => (i.completed ? total : ++total),
+    0,
+  );
+
+  const changeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter(e.target.value);
+  };
   const toggleTaskCompleted = async (id: number, currState: boolean) => {
     try {
       await toggleCompleted({
@@ -87,43 +144,124 @@ const TodoList: React.FC<Props> = ({ todos }) => {
     }
   };
 
-  const [filter, setFilter] = useState("ALL");
-  const filteredItems =
-    filter === "ACTIVE"
-      ? [...todos]
-          .filter((i) => !i.completed)
-          .sort((a, b) => a.position - b.position)
-      : filter === "COMPLETED"
-      ? [...todos]
-          .filter((i) => i.completed)
-          .sort((a, b) => a.position - b.position)
-      : [...todos].sort((a, b) => a.position - b.position);
-
-  const itemsLeft = todos.reduce(
-    (total, i) => (i.completed ? total : ++total),
-    0,
-  );
-
-  const [activeId, setActiveId] = useState<null | Todo>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(KeyboardSensor),
-  );
-
-  const changeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter(e.target.value);
+  const removeTask = async (id: number) => {
+    try {
+      await deleteTask({
+        variables: { id },
+        optimisticResponse: {
+          deleteTask: {
+            __typename: "Todo",
+            id,
+          },
+        },
+        update: (cache, { data }) => {
+          const localTodos = cache.readQuery({ query: GET_TODOS }) as {
+            todos: Todo[];
+          };
+          cache.writeQuery({
+            query: GET_TODOS,
+            data: {
+              todos: localTodos.todos.filter((i) => i.id != data.deleteTask.id),
+            },
+          });
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      let message;
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      throw new Error(message);
+    }
   };
 
-  function handleDragEnd(event: DragEndEvent) {
+  const clearCompleted = async () => {
+    try {
+      await deleteCompleted({
+        optimisticResponse: {},
+        update: (cache) => {
+          const cachedTodos = cache.readQuery({ query: GET_TODOS }) as {
+            todos: Todo[];
+          };
+          cache.writeQuery({
+            query: GET_TODOS,
+            data: { todos: cachedTodos.todos.filter((i) => !i.completed) },
+          });
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      let message;
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      throw new Error(message);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = filteredItems.findIndex((i) => i.id === active.id);
-      const newIndex = filteredItems.findIndex((i) => i.id === over.id);
-      console.log(oldIndex, newIndex);
+      const activeItem = todos.find((i) => i.id === active.id);
+      const overItem = todos.find((i) => i.id === over.id);
+      const activeIdx = todos.findIndex((i) => i.id === active.id);
+      const overIdx = todos.findIndex((i) => i.id === over.id);
+      let beforePos;
+      let nextPos;
+
+      if (activeItem?.position && overItem?.position) {
+        if (activeItem?.position < overItem?.position) {
+          beforePos = overItem.position;
+          nextPos = todos[overIdx + 1]?.position;
+        }
+        if (activeItem.position > overItem.position) {
+          beforePos = todos[overIdx - 1]?.position;
+          nextPos = overItem.position;
+        }
+
+        if (overIdx === 0) {
+          beforePos = 0;
+        }
+        if (overIdx === todos.length - 1) {
+          nextPos = todos.length + 1;
+        }
+      }
+      const newPosition = (nextPos! - beforePos!) / 2 + beforePos!;
+
+      await moveTask({
+        variables: {
+          id: active.id,
+          position: newPosition,
+        },
+        optimisticResponse: {
+          moveTask: {
+            id: active.id,
+            __typename: "Todo",
+            position: newPosition,
+            completed: activeItem?.completed,
+            title: activeItem?.title,
+          },
+        },
+        update: (cache, { data }) => {
+          const cachedTodos = cache.readQuery({ query: GET_TODOS }) as {
+            todos: Todo[];
+          };
+          cachedTodos.todos.splice(activeIdx, 1);
+          cachedTodos.todos.splice(overIdx, 0, data.moveTask);
+
+          cache.writeQuery({
+            query: GET_TODOS,
+            data: {
+              todos: [...cachedTodos.todos],
+            },
+          });
+        },
+        refetchQueries: ["Todos"],
+      });
     }
-  }
+  };
 
   return (
     <DndContext
@@ -146,6 +284,7 @@ const TodoList: React.FC<Props> = ({ todos }) => {
                 todo={item}
                 id={item.id}
                 toggleCompleted={toggleTaskCompleted}
+                removeTask={removeTask}
               />
             ))}
           </SortableContext>
@@ -155,7 +294,7 @@ const TodoList: React.FC<Props> = ({ todos }) => {
           <div className=" hidden justify-around gap-4 rounded-md bg-white text-base font-bold text-lightGrayishBlue dark:bg-veryDarkDesaturatedBlue dark:text-darkGrayishBlue sm:flex">
             <Filter selected={filter} changeFilter={changeFilter} />
           </div>
-          <button>Clear completed</button>
+          <button onClick={clearCompleted}>Clear completed</button>
         </div>
       </div>
       <div className="mt-4 flex justify-around rounded-md bg-white p-4 px-16 text-sm font-bold text-lightGrayishBlue dark:bg-veryDarkDesaturatedBlue dark:text-darkGrayishBlue sm:hidden">
