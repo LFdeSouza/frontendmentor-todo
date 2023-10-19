@@ -23,6 +23,7 @@ import {
 import TodoLoadingSkeleton from "./LoadingSkeleton";
 import Task from "./Task";
 import Filter from "./Filter";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 //Queries and mutations
 export const GET_TODOS = gql`
@@ -93,6 +94,7 @@ const TodoListQuery = () => {
 };
 
 const TodoList: React.FC<Props> = ({ todos }) => {
+  const [animationContainter] = useAutoAnimate<HTMLDivElement>();
   const [toggleCompleted] = useMutation(TOGGLE_COMPLETED);
   const [deleteTask] = useMutation(DELETE_TASK);
   const [deleteCompleted] = useMutation(DELETE_COMPLETED);
@@ -273,7 +275,10 @@ const TodoList: React.FC<Props> = ({ todos }) => {
       sensors={sensors}
     >
       <div className="mt-4 overflow-hidden rounded-md bg-white text-xs text-veryLightGray shadow-lg dark:bg-veryDarkDesaturatedBlue sm:mt-7">
-        <div className="scrollbar max-h-96 overflow-auto sm:max-h-[50vh]">
+        <div
+          ref={animationContainter}
+          className="scrollbar max-h-96 overflow-auto sm:max-h-[50vh]"
+        >
           <SortableContext
             items={filteredItems}
             strategy={verticalListSortingStrategy}
