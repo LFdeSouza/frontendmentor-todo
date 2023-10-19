@@ -7,7 +7,8 @@ import { typeDefs, resolvers } from "../../../graphql/schema";
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-});
+}) as any;
+
 const handler = startServerAndCreateNextHandler<NextRequest>(server, {
   context,
 });
